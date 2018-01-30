@@ -15,11 +15,21 @@ app.get("/" , (req , res)=>{
     res.render("index.html");
 });
 
-io.on("connection" , (socket)=>{
+io.on("connection" , function(socket){
     console.log("New User Connected");
 
-    socket.on("disconnect" , ()=>{
+    server.emit("newMessage" , {
+        from : "John doe",
+        text : "Hello i am John Doe",
+        createdAt : 123123
+    });
+
+    socket.on("disconnect" , function(){
         console.log("User have disconnected");
+    });
+
+    socket.on("createMessage" , function(message){
+        console.log("This is the message" , message);
     });
 })
 
