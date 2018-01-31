@@ -1,38 +1,39 @@
-const path = require("path");
-const express = require("express");
-const socketIO = require("socket.io");
-const http = require("http");
+const path = require('path');
+const http = require('http');
+const express = require('express');
+const socketIO = require('socket.io');
 
-const publicPath = path.join(__dirname , "../public");
-
+const {generateMessage} = require('./utils/message');
+const publicPath = path.join(__dirname, '../public');
+const port = process.env.PORT || 3000;
 var app = express();
-app.use(express.static(publicPath));
-var port = process.env.PORT || 3000;
 var server = http.createServer(app);
 var io = socketIO(server);
 
-app.get("/" , (req , res)=>{
-    res.render("index.html");
+app.use(express.static(publicPath));
+
+io.on('connection', (socket) => {
+  console.log('New user connected');
+
+  socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app'));
+
+  socket.broadcast.emit('newMessage', generateMessage('Admin', 'New user joined'));
+
+  socket.on('createMessage', (message) => {
+    console.log('createMessage', message);
+    io.emit('newMessage', generateMessage(message.from, message.text));
+    // socket.broadcast.emit('newMessage', {
+    //   from: message.from,
+    //   text: message.text,
+    //   createdAt: new Date().getTime()
+    // });
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User was disconnected');
+  });
 });
 
-io.on("connection" , function(socket){
-    console.log("New User Connected");
-
-    server.emit("newMessage" , {
-        from : "John doe",
-        text : "Hello i am John Doe",
-        createdAt : 123123
-    });
-
-    socket.on("disconnect" , function(){
-        console.log("User have disconnected");
-    });
-
-    socket.on("createMessage" , function(message){
-        console.log("This is the message" , message);
-    });
-})
-
-server.listen(port , ()=>{
-    console.log(`The server is up and running on PORT :${port}`);
-})
+server.listen(port, () => {
+  console.log(`Server is up on ${port}`);
+});
